@@ -1,14 +1,14 @@
 {
-  "name": "demo-video",
-  "config": {
-  	"nuxt": {
-	  "port": "8000"
-	}
-  },
-  "scripts": {
-    "dev": "nuxt"
-  },
-  "dependencies": {
-    "nuxt": "^1.0.0-alpha.5"
-  }
+    "name": "demo-video",
+    "config": {
+        "nuxt": {
+            "port": "8000"
+        }
+    },
+    "scripts": {
+        "dev": "nuxt"
+    },
+    "dependencies": {
+        "nuxt": "^1.0.0-alpha.5"
+    }
 }
