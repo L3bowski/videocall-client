@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div id="app">
 
         <div v-if="user.id == null">
             <p>Choose your username</p>
@@ -32,7 +32,7 @@
     </div>
 </template>
 
-<script lang="js">
+<script>
     import ServerConnection from './ServerConnection.js';
 
     export default {

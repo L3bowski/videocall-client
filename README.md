@@ -1,8 +1,23 @@
-Websocket client that allows two clients to establish a RTCPeerConnection from a browser
+# videocall-client
 
-# Setup
+> Websocket client that allows two clients to establish a RTCPeerConnection from a browser
 
-1) npm install. Installs the client dependencies
-2) npm run dev. Starts the Nuxt web application
-3) Remember to have an instance of the [websocket server](https://github.com/L3bowski/videocall-server) running
-	
+## Build Setup
+
+``` bash
+# install dependencies
+npm install
+
+# serve with hot reload at localhost:8080
+npm run dev
+
+# build for production with minification
+npm run build
+
+# build for production and view the bundle analyzer report
+npm run build --report
+```
+
+Remember to have an instance of the [websocket server](https://github.com/L3bowski/videocall-server) running!
+
+For detailed explanation on how things work, checkout the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
