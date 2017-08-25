@@ -1,10 +1,16 @@
 <template>
     <div id="app">
 
-        <div v-if="user.id == null">
+        <div v-if="serverConnection == null">
+            <p>Introduce the server address to connect to</p>
+            <input v-model="webSocketUrl"/>
+            <button v-if="webSocketUrl != null" v-on:click="setUpConnection">Register</button>
+        </div>
+
+        <div v-if="serverConnection != null && user.id == null">
             <p>Choose your username</p>
             <input v-model="user.name"/>
-            <button v-if="user.name != null" v-on:click="register" id="register-button">Register</button>
+            <button v-if="user.name != null" v-on:click="register">Register</button>
         </div>
 
         <div v-if="user.id != null && !callInProgress">
@@ -25,9 +31,7 @@
             <button v-on:click="rejectCall">No</button>
         </div>
 
-        <div id="video-wrapper" class="video-wrapper">
-            <div class="thumbnail"></div>
-        </div>
+        <div id="video-wrapper" class="video-wrapper"></div>
 
     </div>
 </template>
@@ -37,6 +41,8 @@
 
     export default {
         data: () => ({
+            webSocketUrl: null,
+            serverConnection: null,
             user: {
                 id: null,
                 name: null
@@ -47,6 +53,27 @@
             callInProgress: false
         }),
         methods: {
+            setUpConnection() {
+                this.serverConnection = new ServerConnection(this.webSocketUrl, {
+                    userRegistered: (user, otherUsers) => {
+                        this.user = user;
+                        this.otherUsers = otherUsers;
+                    },
+                    otherUserRegistered: (newUser) => {
+                        this.otherUsers = this.otherUsers.concat([newUser]);
+                    },
+                    callRequested: (data) => {
+                        this.selectedUser = this.otherUsers.find(user => user.id = data.senderId);
+                        this.promptAcceptCall = true;
+                    },
+                    callAccepted: async () => {
+                        await this.serverConnection.call(this.user.id, this.selectedUser.id);
+                    },
+                    callEstablished: () => {
+                        this.callInProgress = true;
+                    }
+                });
+            },
             register() {
                 this.serverConnection.register(this.user.name);
             },
@@ -61,35 +88,6 @@
                 this.promptAcceptCall = false;
                 this.selectedUser = null;
             }
-        },
-        async mounted() {
-            this.serverConnection = new ServerConnection('ws://localhost:20000', {
-                userRegistered: (user, otherUsers) => {
-                    this.user = user;
-                    this.otherUsers = otherUsers;
-                },
-                otherUserRegistered: (newUser) => {
-                    this.otherUsers = this.otherUsers.concat([newUser]);
-                },
-                callRequested: (data) => {
-                    this.selectedUser = this.otherUsers.find(user => user.id = data.senderId);
-                    this.promptAcceptCall = true;
-                },
-                callAccepted: async () => {
-                    await this.serverConnection.call(this.user.id, this.selectedUser.id);
-                },
-                callEstablished: () => {
-                    this.callInProgress = true;
-                }
-            });
         }
     }
 </script>
-
-<style scoped>
-    .thumbnail {
-        width: 640px;
-        height: 480px;
-        background-color: lightgrey;
-    }
-</style>
