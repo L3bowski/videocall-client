@@ -27,17 +27,21 @@ export default class PeerWrapper {
         };
 	}
 
-	async call(localUserId, remoteUserId) {
-
-		this.localUserId = localUserId;
-		this.remoteUserId = remoteUserId;
-
+    async addVideoConferenceStream() {
         /*An stream from the current browser webcam is created and added to the peerConnection*/
         let stream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: true
         });
         this.peerConnection.addStream(stream);
+    }
+
+	async call(localUserId, remoteUserId) {
+
+		this.localUserId = localUserId;
+		this.remoteUserId = remoteUserId;
+
+        await this.addVideoConferenceStream();
 
         let offer = await this.peerConnection.createOffer();
         /*The following operation will create many ice candidates */
@@ -49,5 +53,19 @@ export default class PeerWrapper {
             senderId: this.localUserId,
             receiverId: this.remoteUserId
         });
+    }
+
+    async addIceCandidate(iceCandidate) {
+        this.peerConnection.addIceCandidate(iceCandidate);
+    }
+
+    async acceptRemote(remoteDescription) {
+        await this.peerConnection.setRemoteDescription(remoteDescription);
+    }
+
+    async prepareAnswer() {
+        let answer = await this.peerConnection.createAnswer();
+        await this.peerConnection.setLocalDescription(answer);
+        return answer;
     }
 }
