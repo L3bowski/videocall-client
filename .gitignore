@@ -16,3 +16,4 @@ yarn-error.log*
 /nightwatch/screenshots
 /nightwatch/reports
 selenium-debug.log
+
