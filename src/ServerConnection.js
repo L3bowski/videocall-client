@@ -32,9 +32,8 @@ export default class ServerConnection {
 		            // IIFE lamda to synchronously exectue asynchronous functions
             		(async () => {
             			await this.peerWrapper.acceptRemote(data.offer);
-		            	await this.peerWrapper.addVideoConferenceStream();
-			            let answer = await this.peerWrapper.prepareAnswer();
 		        		this.callbacks.callEstablished();
+			            let answer = await this.peerWrapper.prepareAnswer();
 			            this.webSocketWrapper.sendMessage({
 			                operationType: 'answer',
 			                senderId: data.receiverId,

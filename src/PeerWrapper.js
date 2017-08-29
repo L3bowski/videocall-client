@@ -64,6 +64,7 @@ export default class PeerWrapper {
     }
 
     async prepareAnswer() {
+        await this.addVideoConferenceStream();
         let answer = await this.peerConnection.createAnswer();
         await this.peerConnection.setLocalDescription(answer);
         return answer;
