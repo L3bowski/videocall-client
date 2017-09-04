@@ -11,7 +11,9 @@
     "e2e": "nightwatch --config nightwatch.conf.BASIC.js"
   },
   "dependencies": {
-    "vue": "^2.3.3"
+    "font-awesome": "^4.7.0",
+    "vue": "^2.3.3",
+    "vuetify": "^0.15.2"
   },
   "devDependencies": {
     "autoprefixer": "^7.1.2",
