@@ -31,7 +31,8 @@
             <button v-on:click="rejectCall" id="reject-call">No</button>
         </div>
 
-        <div id="video-wrapper" class="video-wrapper"></div>
+        <div id="remote-video"></div>
+        <div id="local-video" class="miniature"></div>
 
     </div>
 </template>
@@ -91,3 +92,10 @@
         }
     }
 </script>
+
+<style>
+    .miniature > video {
+        width: 160px;
+        height: 120px;
+    }
+</style>

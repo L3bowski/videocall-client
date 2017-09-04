@@ -6,7 +6,7 @@ export default class PeerWrapper {
 		this.webSocketWrapper = webSocketWrapper;
 		this.peerConnection = new RTCPeerConnection();
 
-		this.peerConnection.onaddstream = event => this.consumeVideoStream('video-wrapper', event.stream);
+		this.peerConnection.onaddstream = event => this.consumeVideoStream('remote-video', event.stream);
 
         this.peerConnection.onicecandidate = event => {
             if (event.candidate) {
@@ -45,6 +45,7 @@ export default class PeerWrapper {
 
         /*An stream from the current browser webcam is created and added to the peerConnection*/
         var videoStream = await this.getVideoStream();
+        this.consumeVideoStream('local-video', videoStream);
         this.peerConnection.addStream(videoStream);
 
         let offer = await this.peerConnection.createOffer();
