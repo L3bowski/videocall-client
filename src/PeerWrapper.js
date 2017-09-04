@@ -50,4 +50,18 @@ export default class PeerWrapper {
             receiverId: this.remoteUserId
         });
     }
+
+    addIceCandidate(iceCandidate) {
+        return this.peerConnection.addIceCandidate(iceCandidate);
+    }
+
+    async setRemoteDescription(remoteDescription) {
+        return await this.peerConnection.setRemoteDescription(remoteDescription);
+    }
+
+    async prepareAnswer() {
+        let answer = await this.peerConnection.createAnswer();
+        await this.peerConnection.setLocalDescription(answer);
+        return answer;
+    }
 }
