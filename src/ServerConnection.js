@@ -4,6 +4,8 @@ import PeerWrapper from './PeerWrapper.js';
 export default class ServerConnection {
 
 	constructor(webSocketUrl, callbacks) {
+		this.localUserId = null;
+		this.remoteUserId = null;
 		this.callStarted = false;
 		this.callbacks = callbacks;
 		this.webSocketWrapper = new WebSocketWrapper(webSocketUrl, message => {
@@ -32,18 +34,7 @@ export default class ServerConnection {
 		        case 'offer':
 		            // IIFE lamda to synchronously exectue asynchronous functions
             		(async () => {
-            			await this.peerWrapper.setRemoteDescription(data.offer);
-			            let answer = await this.peerWrapper.prepareAnswer();
-		        		this.callbacks.callEstablished();
-			            this.webSocketWrapper.sendMessage({
-			                operationType: 'answer',
-			                senderId: data.receiverId,
-			                receiverId: data.senderId,
-			                answer
-			            });
-						if (!this.callStarted) {
-			            	await this.call(data.receiverId, data.senderId);
-			            }
+            			await this.respondCall(data);
             		})();
 		            break;
 
@@ -56,7 +47,14 @@ export default class ServerConnection {
             }
         });
 
-        this.peerWrapper = new PeerWrapper(this.webSocketWrapper);
+        this.peerWrapper = new PeerWrapper(candidate => {
+        	this.webSocketWrapper.sendMessage({
+	            operationType: 'ice',
+	            candidate,
+	            senderId: this.localUserId,
+	            receiverId: this.remoteUserId
+	        });
+        });
 	}
 
     register(username) {
@@ -82,8 +80,33 @@ export default class ServerConnection {
         });
     }
 
-    async call(senderId, receiverId) {
+    async call(localUserId, remoteUserId) {
+		this.localUserId = localUserId;
+		this.remoteUserId = remoteUserId;
     	this.callStarted = true;
-    	this.peerWrapper.call(senderId, receiverId)
+
+    	let offer = await this.peerWrapper.prepareOffer();
+
+        this.webSocketWrapper.sendMessage({
+            operationType: 'offer',
+            offer,
+            senderId: localUserId,
+            receiverId: remoteUserId
+        });
+    }
+
+    async respondCall(data) {
+    	await this.peerWrapper.setRemoteDescription(data.offer);
+        let answer = await this.peerWrapper.prepareAnswer();
+		this.callbacks.callEstablished();
+        this.webSocketWrapper.sendMessage({
+            operationType: 'answer',
+            senderId: data.receiverId,
+            receiverId: data.senderId,
+            answer
+        });
+		if (!this.callStarted) {
+        	await this.call(data.receiverId, data.senderId);
+        }
     }
 }

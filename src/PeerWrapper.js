@@ -1,21 +1,11 @@
 export default class PeerWrapper {
 
-	constructor(webSocketWrapper) {
-		this.localUserId = null;
-		this.remoteUserId = null;
-		this.webSocketWrapper = webSocketWrapper;
+	constructor(iceCandidateHandler) {
 		this.peerConnection = new RTCPeerConnection();
-
 		this.peerConnection.onaddstream = event => this.consumeVideoStream('remote-video', event.stream);
-
         this.peerConnection.onicecandidate = event => {
             if (event.candidate) {
-                this.webSocketWrapper.sendMessage({
-                    operationType: 'ice',
-                    candidate: event.candidate,
-                    senderId: this.localUserId,
-                    receiverId: this.remoteUserId
-                });
+                iceCandidateHandler(event.candidate);
             }
         };
 	}
@@ -38,10 +28,7 @@ export default class PeerWrapper {
         return stream;
     }
 
-	async call(localUserId, remoteUserId) {
-
-		this.localUserId = localUserId;
-		this.remoteUserId = remoteUserId;
+	async prepareOffer() {
 
         /*An stream from the current browser webcam is created and added to the peerConnection*/
         var videoStream = await this.getVideoStream();
@@ -52,12 +39,7 @@ export default class PeerWrapper {
         /*The following operation will create many ice candidates */
         await this.peerConnection.setLocalDescription(offer);
 
-        this.webSocketWrapper.sendMessage({
-            operationType: 'offer',
-            offer,
-            senderId: this.localUserId,
-            receiverId: this.remoteUserId
-        });
+        return offer;
     }
 
     addIceCandidate(iceCandidate) {
