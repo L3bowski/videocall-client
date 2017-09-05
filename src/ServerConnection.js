@@ -68,17 +68,11 @@ export default class ServerConnection {
 	        	break;
 
 	        case 'offer':
-	            // IIFE lamda to synchronously exectue asynchronous functions
-        		(async () => {
-        			await this.respondCall(data);
-        		})();
+				this.respondCall(data);
 	            break;
 
 	        case 'answer':
-	        	// IIFE lamda to synchronously exectue an asynchronous functions
-        		(async () => {
-        			await this.peerWrapper.setRemoteDescription(data.answer);
-        		})();
+    			this.peerWrapper.setRemoteDescription(data.answer);
 	        	break;
         }
 	}
