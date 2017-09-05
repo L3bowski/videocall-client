@@ -32,6 +32,18 @@ export default class PeerWrapper {
         return stream;
     }
 
+    async prepareAnswer(offer) {
+        await this.peerConnection.setRemoteDescription(offer);
+
+        var videoStream = await this.getVideoStream();
+        this.consumeVideoStream('local-video', videoStream);
+        this.peerConnection.addStream(videoStream);
+
+        let answer = await this.peerConnection.createAnswer();
+        await this.peerConnection.setLocalDescription(answer); // This operation will send many ice candidates
+        return answer;
+    }
+
 	async prepareOffer() {
         var videoStream = await this.getVideoStream();
         this.consumeVideoStream('local-video', videoStream);
@@ -39,14 +51,7 @@ export default class PeerWrapper {
 
         let offer = await this.peerConnection.createOffer();
         await this.peerConnection.setLocalDescription(offer); // This operation will send many ice candidates
-
         return offer;
-    }
-
-    async prepareAnswer() {
-        let answer = await this.peerConnection.createAnswer();
-        await this.peerConnection.setLocalDescription(answer);
-        return answer;
     }
 
     async setRemoteDescription(remoteDescription) {

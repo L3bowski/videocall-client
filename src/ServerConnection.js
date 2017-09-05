@@ -4,32 +4,19 @@ import PeerWrapper from './PeerWrapper.js';
 export default class ServerConnection {
 
     acceptCall(remoteUserId, localUserId) {
-		this.webSocketWrapper.sendMessage({
-            operationType: 'acceptCall',
-        	receiverId: remoteUserId,
-        	senderId: localUserId
-        });
-    }
-
-    async call(localUserId, remoteUserId) {
 		this.localUserId = localUserId;
 		this.remoteUserId = remoteUserId;
-    	this.callStarted = true;
 
-    	let offer = await this.peerWrapper.prepareOffer();
-
-        this.webSocketWrapper.sendMessage({
-            operationType: 'offer',
-            offer,
-            senderId: localUserId,
-            receiverId: remoteUserId
+		this.webSocketWrapper.sendMessage({
+            operationType: 'callAccepted',
+        	receiverId: remoteUserId,
+        	senderId: localUserId
         });
     }
 
 	constructor(webSocketUrl, callbacks) {
 		this.localUserId = null;
 		this.remoteUserId = null;
-		this.callStarted = false;
 		this.callbacks = callbacks;
 		this.webSocketWrapper = new WebSocketWrapper(webSocketUrl, this.onWebsocketMessage.bind(this));
         this.peerWrapper = new PeerWrapper(this.iceCandidateHanlder.bind(this));
@@ -37,7 +24,7 @@ export default class ServerConnection {
 
 	iceCandidateHanlder(iceCandidate) {
     	this.webSocketWrapper.sendMessage({
-            operationType: 'ice',
+            operationType: 'iceCandidate',
             iceCandidate,
             senderId: this.localUserId,
             receiverId: this.remoteUserId
@@ -55,24 +42,26 @@ export default class ServerConnection {
 	        	this.callbacks.otherUserRegistered(data.user);
 	        	break;
 
-	        case 'requestCall':
+	        case 'callRequested':
 	        	this.callbacks.callRequested(data);
 	        	break;
 
-	        case 'acceptCall':
-	        	this.callbacks.callAccepted(data);
+	        case 'callAccepted':
+                this.sendOffer(data.receiverId, data.senderId);
 	        	break;
 
-	        case 'ice':
+	        case 'iceCandidate':
 	        	this.peerWrapper.addIceCandidate(data.iceCandidate);
 	        	break;
 
-	        case 'offer':
+	        case 'offerReceived':
 				this.respondCall(data);
+				this.callbacks.callEstablished();
 	            break;
 
-	        case 'answer':
+	        case 'answerReceived':
     			this.peerWrapper.setRemoteDescription(data.answer);
+				this.callbacks.callEstablished();
 	        	break;
         }
 	}
@@ -85,25 +74,33 @@ export default class ServerConnection {
     }
 
     requestCall(localUserId, remoteUserId) {
+		this.localUserId = localUserId;
+		this.remoteUserId = remoteUserId;
+
 		this.webSocketWrapper.sendMessage({
-            operationType: 'requestCall',
+            operationType: 'callRequested',
         	receiverId: remoteUserId,
         	senderId: localUserId
         });
     }
 
     async respondCall(data) {
-    	await this.peerWrapper.setRemoteDescription(data.offer);
-        let answer = await this.peerWrapper.prepareAnswer();
-		this.callbacks.callEstablished();
+        let answer = await this.peerWrapper.prepareAnswer(data.offer);
         this.webSocketWrapper.sendMessage({
-            operationType: 'answer',
+            operationType: 'answerReceived',
+            answer,
             senderId: data.receiverId,
-            receiverId: data.senderId,
-            answer
+            receiverId: data.senderId
         });
-		if (!this.callStarted) {
-        	await this.call(data.receiverId, data.senderId);
-        }
+    }
+
+    async sendOffer(localUserId, remoteUserId) {
+    	let offer = await this.peerWrapper.prepareOffer();
+        this.webSocketWrapper.sendMessage({
+            operationType: 'offerReceived',
+            offer,
+            senderId: localUserId,
+            receiverId: remoteUserId
+        });
     }
 }

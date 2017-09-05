@@ -67,9 +67,6 @@
                         this.selectedUser = this.otherUsers.find(user => user.id == data.senderId);
                         this.promptAcceptCall = true;
                     },
-                    callAccepted: async () => {
-                        await this.serverConnection.call(this.user.id, this.selectedUser.id);
-                    },
                     callEstablished: () => {
                         this.callInProgress = true;
                     }
