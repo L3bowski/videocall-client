@@ -23,10 +23,10 @@ export default class ServerConnection {
 	        this.webSocket.onmessage = this.onWebsocketMessage.bind(this);
 	    };
 
-        this.peerWrapper = new PeerWrapper(this.iceCandidateHanlder.bind(this));
+        this.peerWrapper = new PeerWrapper(this.iceCandidateHandler.bind(this));
 	}
 
-	iceCandidateHanlder(iceCandidate) {
+	iceCandidateHandler(iceCandidate) {
     	this.sendMessage({
             operationType: 'iceCandidate',
             iceCandidate,
