@@ -1,5 +1,9 @@
 export default class PeerWrapper {
 
+    addIceCandidate(iceCandidate) {
+        return this.peerConnection.addIceCandidate(iceCandidate);
+    }
+
 	constructor(iceCandidateHandler) {
 		this.peerConnection = new RTCPeerConnection();
 		this.peerConnection.onaddstream = event => this.consumeVideoStream('remote-video', event.stream);
@@ -29,30 +33,23 @@ export default class PeerWrapper {
     }
 
 	async prepareOffer() {
-
-        /*An stream from the current browser webcam is created and added to the peerConnection*/
         var videoStream = await this.getVideoStream();
         this.consumeVideoStream('local-video', videoStream);
         this.peerConnection.addStream(videoStream);
 
         let offer = await this.peerConnection.createOffer();
-        /*The following operation will create many ice candidates */
-        await this.peerConnection.setLocalDescription(offer);
+        await this.peerConnection.setLocalDescription(offer); // This operation will send many ice candidates
 
         return offer;
-    }
-
-    addIceCandidate(iceCandidate) {
-        return this.peerConnection.addIceCandidate(iceCandidate);
-    }
-
-    async setRemoteDescription(remoteDescription) {
-        return await this.peerConnection.setRemoteDescription(remoteDescription);
     }
 
     async prepareAnswer() {
         let answer = await this.peerConnection.createAnswer();
         await this.peerConnection.setLocalDescription(answer);
         return answer;
+    }
+
+    async setRemoteDescription(remoteDescription) {
+        return await this.peerConnection.setRemoteDescription(remoteDescription);
     }
 }
