@@ -1,4 +1,3 @@
-import WebSocketWrapper from './WebSocketWrapper.js';
 import PeerWrapper from './PeerWrapper.js';
 
 export default class ServerConnection {
@@ -7,7 +6,7 @@ export default class ServerConnection {
 		this.localUserId = localUserId;
 		this.remoteUserId = remoteUserId;
 
-		this.webSocketWrapper.sendMessage({
+		this.sendMessage({
             operationType: 'callAccepted',
         	receiverId: remoteUserId,
         	senderId: localUserId
@@ -18,12 +17,17 @@ export default class ServerConnection {
 		this.localUserId = null;
 		this.remoteUserId = null;
 		this.callbacks = callbacks;
-		this.webSocketWrapper = new WebSocketWrapper(webSocketUrl, this.onWebsocketMessage.bind(this));
+
+		this.webSocket = new WebSocket(webSocketUrl);
+		this.webSocket.onopen = () => {
+	        this.webSocket.onmessage = this.onWebsocketMessage.bind(this);
+	    };
+
         this.peerWrapper = new PeerWrapper(this.iceCandidateHanlder.bind(this));
 	}
 
 	iceCandidateHanlder(iceCandidate) {
-    	this.webSocketWrapper.sendMessage({
+    	this.sendMessage({
             operationType: 'iceCandidate',
             iceCandidate,
             senderId: this.localUserId,
@@ -55,7 +59,7 @@ export default class ServerConnection {
 	        	break;
 
 	        case 'offerReceived':
-				this.respondCall(data);
+				this.sendAnswer(data);
 				this.callbacks.callEstablished();
 	            break;
 
@@ -67,7 +71,7 @@ export default class ServerConnection {
 	}
 
     register(username) {
-        this.webSocketWrapper.sendMessage({
+        this.sendMessage({
             operationType: 'register',
         	username
         });
@@ -77,16 +81,16 @@ export default class ServerConnection {
 		this.localUserId = localUserId;
 		this.remoteUserId = remoteUserId;
 
-		this.webSocketWrapper.sendMessage({
+		this.sendMessage({
             operationType: 'callRequested',
         	receiverId: remoteUserId,
         	senderId: localUserId
         });
     }
 
-    async respondCall(data) {
+    async sendAnswer(data) {
         let answer = await this.peerWrapper.prepareAnswer(data.offer);
-        this.webSocketWrapper.sendMessage({
+        this.sendMessage({
             operationType: 'answerReceived',
             answer,
             senderId: data.receiverId,
@@ -94,9 +98,13 @@ export default class ServerConnection {
         });
     }
 
+    sendMessage(data) {
+    	this.webSocket.send(JSON.stringify(data));
+    }
+
     async sendOffer(localUserId, remoteUserId) {
     	let offer = await this.peerWrapper.prepareOffer();
-        this.webSocketWrapper.sendMessage({
+        this.sendMessage({
             operationType: 'offerReceived',
             offer,
             senderId: localUserId,
