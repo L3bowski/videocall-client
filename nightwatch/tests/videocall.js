@@ -58,8 +58,14 @@ module.exports = {
         .initializeWindow(clientB)
         // Select the clientB in the first window
         .windowSwitcher(0)
-        .waitForElementVisible('option[data-client-name="' + clientB + '"]')
-        .click('#user-select option[data-client-name="' + clientB + '"]')
+
+        //.waitForElementVisible('option[data-client-name="' + clientB + '"]')
+        //.click('#user-select option[data-client-name="' + clientB + '"]')
+        .waitForElementVisible('.input-group__selections')
+        .click('.input-group__selections')
+        .waitForElementVisible('.list__tile__title')
+        .click('.list__tile__title')
+        
         .pause(pauseTime)
         .click('#call-user')
         // Accept clientA call in the second window

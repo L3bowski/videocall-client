@@ -51,32 +51,37 @@
                     <v-subheader>Choose some one to call to:</v-subheader>
                     <p v-if="otherUsers.length == 0">Seems that there is no one registered yet...</p>
                     <div v-if="otherUsers.length > 0">
-                    <v-layout row>
-                        <v-flex xs4>
-                            <v-select
-                              v-bind:items="otherUsers"
-                              v-model="selectedUser"
-                              label="Please select one"
-                              single-line
-                              auto
-                              item-text="name"
-                              prepend-icon="fa-user"
-                              hide-details
-                            ></v-select>
-                         </v-flex>
-                         <v-flex xs4>
-                            <v-btn v-if="selectedUser != null" v-on:click="requestCall" id="call-user" success dark>
-                                <v-icon light left>fa-phone</v-icon>
-                                Call
-                            </v-btn>
-                        </v-flex>
-                    </v-layout>
-                        
-                        <!--<select v-model="selectedUser" id="user-select">
-                            <option disabled value="">Please select one</option>
-                            <option v-for="user in otherUsers" v-bind:value="user" :data-client-name="user.name">{{ user.name }}</option>
-                        </select>
-                        <button v-if="selectedUser != null" v-on:click="requestCall" id="call-user">Call</button>-->
+                      <v-layout row>
+                          <v-flex xs4>
+                              <v-select
+                                v-bind:items="otherUsers"
+                                v-model="selectedUser"
+                                label="Please select one"
+                                single-line
+                                auto
+                                item-text="name"
+                                prepend-icon="fa-user"
+                                hide-details
+                              ></v-select>
+                              <!-- <select
+                                v-model="selectedUser"
+                                id="user-select">
+                                <option
+                                  disabled
+                                  value="">Please select one</option>
+                                <option
+                                  v-for="user in otherUsers"
+                                  v-bind:value="user"
+                                  :data-client-name="user.name">{{ user.name }}</option> -->
+                              </select>
+                           </v-flex>
+                           <v-flex xs4>
+                              <v-btn v-if="selectedUser != null" v-on:click="requestCall" id="call-user" success dark>
+                                  <v-icon light left>fa-phone</v-icon>
+                                  Call
+                              </v-btn>
+                          </v-flex>
+                      </v-layout>
                     </div>
                 </div>
                 <div v-if="promptAcceptCall">
@@ -135,15 +140,12 @@
                         this.selectedUser = this.otherUsers.find(user => user.id == data.senderId);
                         this.promptAcceptCall = true;
                     },
-                    callAccepted: async () => {
-                        await this.serverConnection.call(this.user.id, this.selectedUser.id);
-                    },
                     callEstablished: () => {
                         this.callInProgress = true;
                     },
-                    callFinished: () => {
-                        this.callInProgress = false;
-                    }
+                    // callFinished: () => {
+                    //     this.callInProgress = false;
+                    // }
                 });
             },
             register() {

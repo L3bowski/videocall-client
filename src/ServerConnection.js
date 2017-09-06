@@ -1,124 +1,126 @@
-import WebSocketWrapper from './WebSocketWrapper.js';
 import PeerWrapper from './PeerWrapper.js';
 
 export default class ServerConnection {
 
+    acceptCall(remoteUserId, localUserId) {
+		this.localUserId = localUserId;
+		this.remoteUserId = remoteUserId;
+
+		this.sendMessage({
+            operationType: 'callAccepted',
+        	receiverId: remoteUserId,
+        	senderId: localUserId
+        });
+    }
+
 	constructor(webSocketUrl, callbacks) {
 		this.localUserId = null;
 		this.remoteUserId = null;
-		this.callStarted = false;
 		this.callbacks = callbacks;
-		this.webSocketWrapper = new WebSocketWrapper(webSocketUrl, message => {
-            let data = JSON.parse(message.data);
-            switch (data.operationType) {
-				case 'userRegistered':
-		        	this.callbacks.userRegistered(data.user, data.otherUsers);
-		        	break;
 
-		        case 'otherUserRegistered':
-		        	this.callbacks.otherUserRegistered(data.user);
-		        	break;
+		this.webSocket = new WebSocket(webSocketUrl);
+		this.webSocket.onopen = () => {
+	        this.webSocket.onmessage = this.onWebsocketMessage.bind(this);
+	    };
 
-		        case 'requestCall':
-		        	this.callbacks.callRequested(data);
-		        	break;
+        this.peerWrapper = new PeerWrapper(this.iceCandidateHandler.bind(this));
+	}
 
-		        case 'acceptCall':
-		        	this.callbacks.callAccepted(data);
-		        	break;
+    // finishCall(localUserId, remoteUserId) {
+    //     this.webSocketWrapper.sendMessage({
+    //         operationType: 'callFinished',
+    //         receiverId: remoteUserId,
+    //         senderId: localUserId
+    //     });
+    // }
 
-				case 'hangUpCall':
-		        	this.callbacks.callFinished(data);
-		        	break;
-
-		        case 'ice':
-		        	this.peerWrapper.addIceCandidate(data.candidate);
-		        	break;
-
-		        case 'offer':
-		            // IIFE lamda to synchronously exectue asynchronous functions
-            		(async () => {
-            			await this.respondCall(data);
-            		})();
-		            break;
-
-		        case 'answer':
-		        	// IIFE lamda to synchronously exectue an asynchronous functions
-            		(async () => {
-            			await this.peerWrapper.setRemoteDescription(data.answer);
-            		})();
-		        	break;
-            }
-        });
-
-        this.peerWrapper = new PeerWrapper(candidate => {
-        	this.webSocketWrapper.sendMessage({
-	            operationType: 'ice',
-	            candidate,
-	            senderId: this.localUserId,
-	            receiverId: this.remoteUserId
-	        });
+	iceCandidateHandler(iceCandidate) {
+    	this.sendMessage({
+            operationType: 'iceCandidate',
+            iceCandidate,
+            senderId: this.localUserId,
+            receiverId: this.remoteUserId
         });
 	}
 
+	onWebsocketMessage(message) {
+		let data = JSON.parse(message.data);
+        switch (data.operationType) {
+			case 'userRegistered':
+	        	this.callbacks.userRegistered(data.user, data.otherUsers);
+	        	break;
+
+	        case 'otherUserRegistered':
+	        	this.callbacks.otherUserRegistered(data.user);
+	        	break;
+
+	        case 'callRequested':
+	        	this.callbacks.callRequested(data);
+	        	break;
+
+	        case 'callAccepted':
+                this.sendOffer(data.receiverId, data.senderId);
+	        	break;
+
+            // case 'callFinished':
+            //     this.callbacks.callFinished(data);
+            //     break;
+
+	        case 'iceCandidate':
+	        	this.peerWrapper.addIceCandidate(data.iceCandidate);
+	        	break;
+
+	        case 'offerReceived':
+				this.sendAnswer(data);
+				this.callbacks.callEstablished();
+	            break;
+
+	        case 'answerReceived':
+    			this.peerWrapper.setRemoteDescription(data.answer);
+				this.callbacks.callEstablished();
+	        	break;
+        }
+	}
+
     register(username) {
-        this.webSocketWrapper.sendMessage({
+        this.sendMessage({
             operationType: 'register',
         	username
         });
     }
 
-    requestCall(senderId, receiverId) {
-		this.webSocketWrapper.sendMessage({
-            operationType: 'requestCall',
-        	receiverId,
-        	senderId
-        });
-    }
-
-	hangUpCall(senderId, receiverId) {
-		this.webSocketWrapper.sendMessage({
-            operationType: 'hangUpCall',
-        	receiverId,
-        	senderId
-        });
-    }
-
-    acceptCall(initiatorId, userId) {
-		this.webSocketWrapper.sendMessage({
-            operationType: 'acceptCall',
-        	receiverId: initiatorId,
-        	senderId: userId
-        });
-    }
-
-    async call(localUserId, remoteUserId) {
+    requestCall(localUserId, remoteUserId) {
 		this.localUserId = localUserId;
 		this.remoteUserId = remoteUserId;
-    	this.callStarted = true;
 
+		this.sendMessage({
+            operationType: 'callRequested',
+        	receiverId: remoteUserId,
+        	senderId: localUserId
+        });
+    }
+
+    async sendAnswer(data) {
+        let answer = await this.peerWrapper.prepareAnswer(data.offer);
+        this.sendMessage({
+            operationType: 'answerReceived',
+            answer,
+            senderId: data.receiverId,
+            receiverId: data.senderId
+        });
+    }
+
+    sendMessage(data) {
+    	this.webSocket.send(JSON.stringify(data));
+    }
+
+    async sendOffer(localUserId, remoteUserId) {
     	let offer = await this.peerWrapper.prepareOffer();
-
-        this.webSocketWrapper.sendMessage({
-            operationType: 'offer',
+        this.sendMessage({
+            operationType: 'offerReceived',
             offer,
             senderId: localUserId,
             receiverId: remoteUserId
         });
-    }
-
-    async respondCall(data) {
-    	await this.peerWrapper.setRemoteDescription(data.offer);
-        let answer = await this.peerWrapper.prepareAnswer();
-		this.callbacks.callEstablished();
-        this.webSocketWrapper.sendMessage({
-            operationType: 'answer',
-            senderId: data.receiverId,
-            receiverId: data.senderId,
-            answer
-        });
-		if (!this.callStarted) {
-        	await this.call(data.receiverId, data.senderId);
-        }
     }
 }
