@@ -27,6 +27,10 @@ export default class ServerConnection {
 		        	this.callbacks.callAccepted(data);
 		        	break;
 
+				case 'hangUpCall':
+		        	this.callbacks.callFinished(data);
+		        	break;
+
 		        case 'ice':
 		        	this.peerWrapper.addIceCandidate(data.candidate);
 		        	break;
@@ -67,6 +71,14 @@ export default class ServerConnection {
     requestCall(senderId, receiverId) {
 		this.webSocketWrapper.sendMessage({
             operationType: 'requestCall',
+        	receiverId,
+        	senderId
+        });
+    }
+
+	hangUpCall(senderId, receiverId) {
+		this.webSocketWrapper.sendMessage({
+            operationType: 'hangUpCall',
         	receiverId,
         	senderId
         });

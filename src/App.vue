@@ -140,6 +140,9 @@
                     },
                     callEstablished: () => {
                         this.callInProgress = true;
+                    },
+                    callFinished: () => {
+                        this.callInProgress = false;
                     }
                 });
             },
@@ -148,6 +151,10 @@
             },
             requestCall() {
                 this.serverConnection.requestCall(this.user.id, this.selectedUser.id);
+            },
+            hangUpCall() {
+                this.callInProgress = false;
+                this.serverConnection.hangUpCall(this.user.id, this.selectedUser.id);
             },
             acceptCall() {
                 this.promptAcceptCall = false;
